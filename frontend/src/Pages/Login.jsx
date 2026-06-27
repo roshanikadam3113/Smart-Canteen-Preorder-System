@@ -19,6 +19,18 @@ function Login() {
 
   const { email, password } = formData;
 
+  useEffect(() => {
+    const hint = localStorage.getItem("hint");
+    if (hint === "admin") {
+      setFormData({
+        email: "admin@canteen.in",
+        password: "admin123"
+      });
+      // Clear hint so standard logins start clean
+      localStorage.removeItem("hint");
+    }
+  }, []);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
