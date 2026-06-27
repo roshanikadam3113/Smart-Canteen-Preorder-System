@@ -1,0 +1,21 @@
+/* ===========================
+   REGISTER PAGE
+=========================== */
+
+.row{
+    display:flex;
+    gap:12px;
+}
+
+.row .field{
+    flex:1;
+}
+
+@media(max-width:600px){
+
+    .row{
+        flex-direction:column;
+        gap:0;
+    }
+
+}

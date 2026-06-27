@@ -1,44 +1,39 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const path = require("path");
 require("dotenv").config();
 
-//import food Routes
-const foodRoutes=require("./routes/foodRoutes");
-
-const authRoutes=require("./routes/authRoutes");
-
+const foodRoutes = require("./routes/foodRoutes");
+const authRoutes = require("./routes/authRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+
+const seedDatabase = require("./utils/seed");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URL)
-.then(() => {
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => {
     console.log("MongoDB Connected");
-})
-.catch((error) => {
-    console.log(error);
-});
+    seedDatabase();
+  })
+  .catch((error) => console.log(error));
 
-// Home Route
+
 app.get("/", (req, res) => {
-    res.send("Backend Running");
+  res.send("Backend Running");
 });
 
-// Food Route
-app.use("/foods",foodRoutes);
-
-//User route
-app.use("/auth",authRoutes);
-
-//order route
-app.use("/orders",orderRoutes);
+app.use("/foods", foodRoutes);
+app.use("/auth", authRoutes);
+app.use("/orders", orderRoutes);
 
 app.listen(5000, () => {
-    console.log("Server Started");
+  console.log("Server Started");
 });

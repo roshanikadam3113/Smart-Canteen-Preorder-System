@@ -1,20 +1,135 @@
+import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import axios from "axios";
+import Navbar from "../components/Navbar";
+import "../style/Token.css";
+
 function Token() {
-  const order = JSON.parse(
-    localStorage.getItem("order")
+  const [searchParams] = useSearchParams();
+  const tokenNumber = searchParams.get("t") || localStorage.getItem("canteen.lastOrder");
+
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(!!tokenNumber);
+  const [error, setError] = useState(
+    tokenNumber ? "" : "No active order found. Please place an order first."
   );
 
+  useEffect(() => {
+    if (!tokenNumber) return;
+
+    const fetchOrder = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/orders/token/${tokenNumber}`);
+        setOrder(response.data);
+        setError("");
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load order details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+
+    // Set up status updates polling fallback (every 2.5 seconds)
+    const pollInterval = setInterval(() => {
+      fetchOrder();
+    }, 2500);
+
+    return () => clearInterval(pollInterval);
+  }, [tokenNumber]);
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <main className="page" style={{ display: "grid", placeItems: "center", minHeight: "50vh" }}>
+          <div>Loading token details...</div>
+        </main>
+      </>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <>
+        <Navbar />
+        <main className="page" style={{ display: "grid", placeItems: "center", minHeight: "50vh" }}>
+          <div className="token-card" style={{ textAlign: "center" }}>
+            <h1 style={{ fontSize: "22px", color: "var(--danger)", margin: "0 0 10px" }}>No Order Found</h1>
+            <p className="sub" style={{ marginBottom: "20px" }}>{error || "Place an order first to receive a token."}</p>
+            <Link className="btn btn-primary" to="/menu">
+              Back to Menu
+            </Link>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  const s = order.status;
+  const cls = s === "Ready" ? "status-ready" : s === "Cooking" ? "status-cooking" : s === "Completed" ? "status-completed" : s === "Cancelled" ? "status-cancelled" : "status-preparing";
+  const icon = s === "Ready" ? "✅" : s === "Cooking" ? "🍳" : s === "Completed" ? "✨" : s === "Cancelled" ? "❌" : "⏳";
+
   return (
-    <div>
-      <h1>Order Successful 🎉</h1>
+    <>
+      <Navbar />
 
-      <h2>Token Number: {order.tokenNumber}</h2>
-
-      <h2>Status: {order.status}</h2>
-
-      <h3>Name: {order.userName}</h3>
-
-      <h3>Total Amount: ₹{order.totalAmount}</h3>
-    </div>
+      <main className="page" style={{ display: "grid", placeItems: "center", padding: "40px 20px" }}>
+        <div className="token-card" data-testid="token-card">
+          <div style={{ color: "var(--muted)", fontWeight: "600", letterSpacing: "1px", textTransform: "uppercase", fontSize: "11px" }}>
+            Your Token
+          </div>
+          <div className="token-num" data-testid="token-num">
+            {order.tokenNumber}
+          </div>
+          <div style={{ color: "var(--brown-soft)", fontSize: "13px", marginBottom: "12px" }}>
+            {order.userName} • {order.rollNumber} • {order.department}
+          </div>
+          <div style={{ margin: "14px 0" }}>
+            <span className={`status-pill ${cls}`} data-testid="status-pill">
+              {icon} {s}
+            </span>
+          </div>
+          
+          <div style={{ textAlign: "left", marginTop: "18px", borderTop: "1px dashed var(--border)", paddingTop: "12px" }}>
+            {order.items.map((i, idx) => (
+              <div className="summary-item" key={idx}>
+                <span>
+                  {i.name} <span style={{ color: "var(--muted)" }}>× {i.qty}</span>
+                </span>
+                <span>₹{i.price * i.qty}</span>
+              </div>
+            ))}
+            <div className="summary-item" style={{ fontWeight: "800", fontSize: "15px", borderBottom: "none", marginTop: "10px" }}>
+              <span>Total</span>
+              <span>₹{order.totalAmount}</span>
+            </div>
+            <div className="summary-item" style={{ borderBottom: "none" }}>
+              <span>Slot</span>
+              <span>{order.slot ? order.slot.split("—")[0].trim() : ""}</span>
+            </div>
+            <div className="summary-item" style={{ borderBottom: "none" }}>
+              <span>Payment</span>
+              <span>{order.paymentMethod ? order.paymentMethod.toUpperCase() : ""}</span>
+            </div>
+          </div>
+          
+          <div className="warn" style={{ marginTop: "16px", fontSize: "12px", color: "var(--muted)", fontStyle: "italic" }}>
+            Show this token at the counter. No cancellation after payment.
+          </div>
+          <div style={{ marginTop: "20px", display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
+            <Link className="btn btn-ghost btn-sm" to="/menu" data-testid="back-menu">
+              🍽️ Menu
+            </Link>
+            <Link className="btn btn-primary btn-sm" to="/orders" data-testid="my-orders-link">
+              📋 My Orders
+            </Link>
+          </div>
+        </div>
+      </main>
+    </>
   );
 }
 

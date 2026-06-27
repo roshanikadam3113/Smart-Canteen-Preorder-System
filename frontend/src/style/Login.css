@@ -1,0 +1,43 @@
+/* ===========================
+   LOGIN PAGE
+=========================== */
+
+.auth-card h1{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.auth-card .sub{
+    text-align:center;
+    margin-bottom:24px;
+    color:var(--muted);
+    line-height:1.6;
+}
+
+.login-btn{
+    margin-top:20px;
+}
+
+.login-btn:hover{
+    transform:translateY(-2px);
+}
+
+.switch-link{
+    margin-top:24px;
+    text-align:center;
+}
+
+.switch-link a{
+    color:var(--orange);
+    font-weight:600;
+    text-decoration:none;
+}
+
+.switch-link a:hover{
+    color:var(--orange-dark);
+    text-decoration:underline;
+}
+
+.alert{
+    margin-bottom:18px;
+}

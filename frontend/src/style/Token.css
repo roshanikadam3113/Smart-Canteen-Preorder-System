@@ -1,0 +1,288 @@
+/* ======================================================
+   TOKEN PAGE
+====================================================== */
+
+.token-page{
+    max-width:700px;
+    margin:40px auto;
+    padding:20px;
+}
+
+.token-card{
+    background:#fff;
+
+    border:1px solid var(--border);
+
+    border-radius:24px;
+
+    padding:40px;
+
+    text-align:center;
+
+    box-shadow:0 16px 40px rgba(58,36,22,.08);
+
+    animation:fadeUp .45s ease;
+}
+
+/* ======================================================
+   SUCCESS ICON
+====================================================== */
+
+.success-icon{
+    width:90px;
+    height:90px;
+
+    margin:0 auto 24px;
+
+    border-radius:50%;
+
+    background:#d8f3dc;
+
+    color:#2d6a4f;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    font-size:42px;
+}
+
+/* ======================================================
+   TITLE
+====================================================== */
+
+.token-card h1{
+    margin-bottom:10px;
+
+    font-family:'Fraunces',serif;
+
+    font-size:40px;
+
+    color:var(--brown);
+}
+
+.token-card p{
+    color:var(--muted);
+
+    line-height:1.7;
+
+    margin-bottom:28px;
+}
+
+/* ======================================================
+   TOKEN NUMBER
+====================================================== */
+
+.token-number{
+
+    margin:24px auto;
+
+    width:220px;
+
+    padding:22px;
+
+    border-radius:20px;
+
+    background:linear-gradient(
+        135deg,
+        var(--orange),
+        var(--gold)
+    );
+
+    color:#fff;
+}
+
+.token-label{
+    font-size:14px;
+    opacity:.9;
+}
+
+.token-value{
+    margin-top:8px;
+
+    font-size:42px;
+
+    font-weight:800;
+
+    letter-spacing:2px;
+}
+/* ======================================================
+   ORDER DETAILS
+====================================================== */
+
+.order-details{
+    margin:30px 0;
+
+    padding:24px;
+
+    background:#fffaf3;
+
+    border:1px solid var(--border);
+
+    border-radius:20px;
+}
+
+.detail-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:12px 0;
+
+    border-bottom:1px solid var(--border);
+}
+
+.detail-row:last-child{
+    border-bottom:none;
+}
+
+.detail-label{
+    font-weight:600;
+    color:var(--muted);
+}
+
+.detail-value{
+    font-weight:700;
+    color:var(--brown);
+}
+
+/* ======================================================
+   ORDER STATUS
+====================================================== */
+
+.status-badge{
+    display:inline-block;
+
+    margin-top:20px;
+
+    padding:10px 22px;
+
+    border-radius:999px;
+
+    font-size:14px;
+    font-weight:700;
+}
+
+.status-preparing{
+    background:#fff3cd;
+    color:#856404;
+}
+
+.status-cooking{
+    background:#d1ecf1;
+    color:#0c5460;
+}
+
+.status-ready{
+    background:#d4edda;
+    color:#155724;
+}
+
+/* ======================================================
+   PICKUP MESSAGE
+====================================================== */
+
+.pickup-note{
+    margin-top:24px;
+
+    padding:16px;
+
+    background:#fff8e8;
+
+    border-left:5px solid var(--orange);
+
+    border-radius:12px;
+
+    color:var(--brown-soft);
+
+    line-height:1.7;
+
+    font-size:14px;
+}
+
+/* ======================================================
+   ACTION BUTTON
+====================================================== */
+
+.back-btn{
+    display:inline-block;
+
+    margin-top:30px;
+
+    padding:14px 30px;
+
+    border-radius:999px;
+
+    background:var(--orange);
+
+    color:#fff;
+
+    text-decoration:none;
+
+    font-size:15px;
+    font-weight:700;
+
+    transition:.3s;
+}
+
+.back-btn:hover{
+    background:var(--orange-dark);
+    transform:translateY(-2px);
+}
+
+/* ======================================================
+   RESPONSIVE
+====================================================== */
+
+@media(max-width:768px){
+
+    .token-card{
+        padding:28px 20px;
+    }
+
+    .token-card h1{
+        font-size:32px;
+    }
+
+    .token-number{
+        width:180px;
+    }
+
+    .token-value{
+        font-size:34px;
+    }
+
+    .detail-row{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:6px;
+    }
+
+}
+
+@media(max-width:480px){
+
+    .token-page{
+        padding:16px;
+    }
+
+    .token-card{
+        padding:22px 16px;
+    }
+
+    .success-icon{
+        width:70px;
+        height:70px;
+        font-size:34px;
+    }
+
+    .token-card h1{
+        font-size:28px;
+    }
+
+    .back-btn{
+        width:100%;
+        text-align:center;
+    }
+
+}
