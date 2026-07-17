@@ -52,7 +52,7 @@ function Home() {
                 className="btn-hero-primary"
                 to="/register"
               >
-                🍽️ Get Started Free
+                🍽️ Get Started
               </Link>
 
               <Link

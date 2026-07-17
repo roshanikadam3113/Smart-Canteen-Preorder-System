@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
@@ -24,13 +24,14 @@ function Billing() {
 
   const [paymentMethod, setPaymentMethod] = useState("");
   const [error, setError] = useState("");
+  const [isOrderPlaced, setIsOrderPlaced] = useState(false);
 
   // Redirect if cart or slot is missing
   useEffect(() => {
-    if (cart.length === 0) {
+    if (cart.length === 0 && !isOrderPlaced) {
       navigate("/menu");
     }
-  }, [cart, navigate]);
+  }, [cart, navigate, isOrderPlaced]);
 
   const handleInputChange = (e) => {
     setBillingDetails({
@@ -79,7 +80,10 @@ function Billing() {
         paymentMethod,
       };
 
-      const response = await axios.post("http://localhost:5000/orders", orderData);
+      const response = await api.post("/orders", orderData);
+      
+      // Set order placed state to true to prevent redirecting to /menu
+      setIsOrderPlaced(true);
       
       // Save last placed order token to localStorage
       localStorage.setItem("canteen.lastOrder", response.data.tokenNumber);
@@ -87,7 +91,8 @@ function Billing() {
       // Reset cart state
       clearCart();
       
-      // Redirect to token status view
+      // Show success alert and redirect to token page so they can see their token
+      alert("Order Placed Successfully!");
       navigate(`/token?t=${response.data.tokenNumber}`);
     } catch (err) {
       console.error(err);

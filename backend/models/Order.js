@@ -49,6 +49,10 @@ const orderSchema = new mongoose.Schema(
       enum: ["Preparing", "Cooking", "Ready", "Completed", "Cancelled"],
       default: "Preparing",
     },
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

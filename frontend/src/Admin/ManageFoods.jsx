@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api, { API_BASE_URL } from "../utils/api";
 import Navbar from "../components/Navbar";
 import "./Admin.css";
 
@@ -33,7 +33,7 @@ function ManageFoods() {
 
   const getFoods = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/foods");
+      const response = await api.get("/foods");
       setFoods(response.data);
     } catch (error) {
       console.error("Error fetching foods:", error);
@@ -112,7 +112,7 @@ function ManageFoods() {
     try {
       if (editingId) {
         // Edit existing food
-        const response = await axios.put(`http://localhost:5000/foods/${editingId}`, data, {
+        const response = await api.put(`/foods/${editingId}`, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         showToast(`${formData.name} updated successfully!`);
@@ -123,7 +123,7 @@ function ManageFoods() {
           alert("Food image file is required.");
           return;
         }
-        const response = await axios.post("http://localhost:5000/foods", data, {
+        const response = await api.post("/foods", data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         showToast(`${formData.name} added successfully!`);
@@ -138,7 +138,7 @@ function ManageFoods() {
 
   const handleToggleStock = async (id) => {
     try {
-      const response = await axios.put(`http://localhost:5000/foods/${id}/toggle-stock`);
+      const response = await api.put(`/foods/${id}/toggle-stock`);
       const updatedItem = response.data;
       setFoods(foods.map((f) => (f._id === id ? updatedItem : f)));
       showToast(`${updatedItem.name} is now ${updatedItem.inStock ? "In Stock" : "Out of Stock"}`);
@@ -152,7 +152,7 @@ function ManageFoods() {
     if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
 
     try {
-      await axios.delete(`http://localhost:5000/foods/${id}`);
+      await api.delete(`/foods/${id}`);
       setFoods(foods.filter((f) => f._id !== id));
       showToast(`${name} deleted successfully.`);
       if (editingId === id) {
@@ -355,7 +355,7 @@ function ManageFoods() {
                           <tr key={food._id} data-testid={`menu-item-${food._id}`}>
                             <td>
                               <img
-                                src={`http://localhost:5000/uploads/foods/${food.image}`}
+                                src={`${API_BASE_URL}/uploads/foods/${food.image}`}
                                 alt={food.name}
                               />
                             </td>

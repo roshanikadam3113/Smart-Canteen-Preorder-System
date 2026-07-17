@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
@@ -9,9 +9,18 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
+  const [formData, setFormData] = useState(() => {
+    const hint = localStorage.getItem("hint");
+    if (hint === "admin") {
+      return {
+        email: "admin@canteen.in",
+        password: "admin123"
+      };
+    }
+    return {
+      email: "",
+      password: ""
+    };
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -22,10 +31,6 @@ function Login() {
   useEffect(() => {
     const hint = localStorage.getItem("hint");
     if (hint === "admin") {
-      setFormData({
-        email: "admin@canteen.in",
-        password: "admin123"
-      });
       // Clear hint so standard logins start clean
       localStorage.removeItem("hint");
     }

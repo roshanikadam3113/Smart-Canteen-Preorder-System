@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import {
   FaClipboardList,
   FaRupeeSign,
@@ -25,8 +25,8 @@ function Dashboard() {
     try {
       setRefreshing(true);
       const [ordersRes, foodsRes] = await Promise.all([
-        axios.get("http://localhost:5000/orders"),
-        axios.get("http://localhost:5000/foods")
+        api.get("/orders"),
+        api.get("/foods")
       ]);
       setOrders(ordersRes.data);
       setFoods(foodsRes.data);
@@ -312,6 +312,7 @@ function Dashboard() {
                         <th>Slot</th>
                         <th>Amount</th>
                         <th>Items Count</th>
+                        <th>Payment</th>
                         <th>Order Status</th>
                       </tr>
                     </thead>
@@ -339,6 +340,23 @@ function Dashboard() {
                               <span style={{ fontWeight: "700", color: "var(--brown)" }}>₹{order.totalAmount}</span>
                             </td>
                             <td>{order.items.reduce((sum, item) => sum + item.qty, 0)} items</td>
+                            <td>
+                              <span 
+                                style={{ 
+                                  display: "inline-block",
+                                  padding: "4px 10px",
+                                  borderRadius: "999px",
+                                  fontSize: "11px",
+                                  fontWeight: "800",
+                                  textTransform: "uppercase",
+                                  background: order.isPaid ? "#d9f1e4" : "#fde2e2",
+                                  color: order.isPaid ? "#1f5137" : "#d62828",
+                                  border: order.isPaid ? "1px solid #1f513740" : "1px solid #d6282840"
+                                }}
+                              >
+                                {order.isPaid ? "Paid" : "Unpaid"}
+                              </span>
+                            </td>
                             <td>
                               <span 
                                 style={{ 

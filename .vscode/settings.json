@@ -1,0 +1,6 @@
+{
+    "liveServer.settings.CustomBrowser": "chrome",
+    "liveServer.settings.NoBrowser": true,
+    "liveServer.settings.fullReload": true,
+    "liveServer.settings.useWebExt": true
+}

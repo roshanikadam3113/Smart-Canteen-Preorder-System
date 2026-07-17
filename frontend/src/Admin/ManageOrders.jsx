@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api, { API_BASE_URL } from "../utils/api";
+import io from "socket.io-client";
 import Navbar from "../components/Navbar";
 import "./Admin.css";
 
@@ -18,7 +19,7 @@ function ManageOrders() {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/orders");
+      const response = await api.get("/orders");
       setOrders(response.data);
     } catch (err) {
       console.error("Error fetching admin orders:", err);
@@ -27,21 +28,44 @@ function ManageOrders() {
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-
-    // Refresh orders list every 3.5 seconds
-    const interval = setInterval(() => {
-      fetchOrders();
-    }, 3500);
-
-    return () => clearInterval(interval);
-  }, []);
-
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 2500);
   };
+
+  useEffect(() => {
+    fetchOrders();
+
+    // Connect to WebSocket server
+    const socket = io(API_BASE_URL);
+
+    socket.on("connect", () => {
+      // Join the admin room
+      socket.emit("join", "admin");
+      console.log("Admin socket client connected and joined admin room");
+    });
+
+    // Listen for new orders placed by students
+    socket.on("new_order_placed", (newOrder) => {
+      setOrders((prev) => {
+        // Prevent duplicate entries
+        if (prev.some((o) => o._id === newOrder._id)) return prev;
+        return [newOrder, ...prev];
+      });
+      showToast(`New Order #${newOrder.tokenNumber} received!`);
+    });
+
+    // Listen for status changes
+    socket.on("order_updated", (updatedOrder) => {
+      setOrders((prev) => prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o)));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+
 
   const handleAdvanceStatus = async (orderId, currentStatus, tokenNum) => {
     let nextStatus = "Cooking";
@@ -50,7 +74,7 @@ function ManageOrders() {
     else if (currentStatus === "Ready") nextStatus = "Completed";
 
     try {
-      const response = await axios.put(`http://localhost:5000/orders/${orderId}`, {
+      const response = await api.put(`/orders/${orderId}`, {
         status: nextStatus,
       });
 
@@ -67,7 +91,7 @@ function ManageOrders() {
     if (!window.confirm('Archive all "Ready" orders? This marks them Completed and clears them from active Kanban.')) return;
 
     try {
-      const response = await axios.post("http://localhost:5000/orders/archive");
+      const response = await api.post("/orders/archive");
       showToast(`Archived ${response.data.count} ready orders.`);
       fetchOrders(); // Refresh lists
     } catch (err) {
@@ -204,6 +228,9 @@ function ManageOrders() {
                         <div className="kanban-card-meta">
                           <span className="kanban-meta-chip">₹{o.totalAmount}</span>
                           <span className="kanban-meta-chip">{o.slot ? o.slot.split("—")[0].trim() : ""}</span>
+                          <span className="kanban-meta-chip" style={{ background: o.isPaid ? "#d9f1e4" : "#fde2e2", color: o.isPaid ? "#1f5137" : "#d62828" }}>
+                            {o.isPaid ? "Paid" : "Unpaid"}
+                          </span>
                         </div>
                         <div className="kanban-card-action">
                           <button
@@ -248,6 +275,9 @@ function ManageOrders() {
                         <div className="kanban-card-meta">
                           <span className="kanban-meta-chip">₹{o.totalAmount}</span>
                           <span className="kanban-meta-chip">{o.slot ? o.slot.split("—")[0].trim() : ""}</span>
+                          <span className="kanban-meta-chip" style={{ background: o.isPaid ? "#d9f1e4" : "#fde2e2", color: o.isPaid ? "#1f5137" : "#d62828" }}>
+                            {o.isPaid ? "Paid" : "Unpaid"}
+                          </span>
                         </div>
                         <div className="kanban-card-action">
                           <button
@@ -292,6 +322,9 @@ function ManageOrders() {
                         <div className="kanban-card-meta">
                           <span className="kanban-meta-chip">₹{o.totalAmount}</span>
                           <span className="kanban-meta-chip">{o.slot ? o.slot.split("—")[0].trim() : ""}</span>
+                          <span className="kanban-meta-chip" style={{ background: o.isPaid ? "#d9f1e4" : "#fde2e2", color: o.isPaid ? "#1f5137" : "#d62828" }}>
+                            {o.isPaid ? "Paid" : "Unpaid"}
+                          </span>
                         </div>
                         <div className="kanban-card-action">
                           <button

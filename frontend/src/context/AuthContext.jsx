@@ -1,29 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState } from "react";
-import axios from "axios";
+import api from "../utils/api";
 
 export const AuthContext = createContext();
-
-// Configure axios interceptor to automatically send Authorization header with token
-axios.interceptors.request.use(
-  (config) => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        if (parsed && parsed.token) {
-          config.headers.Authorization = `Bearer ${parsed.token}`;
-        }
-      } catch (error) {
-        console.error("Error reading auth token for request:", error);
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -40,7 +19,7 @@ export function AuthProvider({ children }) {
   });
 
   const login = async (email, password) => {
-    const response = await axios.post("http://localhost:5000/auth/login", {
+    const response = await api.post("/auth/login", {
       email,
       password,
     });
@@ -51,14 +30,17 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (name, roll, department, email, password) => {
-    const response = await axios.post("http://localhost:5000/auth/register", {
+    const response = await api.post("/auth/register", {
       name,
       roll,
       department,
       email,
       password,
     });
-    return response.data;
+    const userData = response.data;
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    return userData;
   };
 
   const logout = () => {

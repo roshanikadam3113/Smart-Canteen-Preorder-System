@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 import { useState, useEffect, useContext } from "react";
-import axios from "axios";
+import api, { API_BASE_URL } from "../utils/api";
 import { CartContext } from "../context/CartContext";
 import Navbar from "../components/Navbar";
 import "../style/Menu.css";
@@ -25,7 +25,7 @@ function Menu() {
 
   const getFoods = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/foods");
+      const response = await api.get("/foods");
       setFoods(response.data);
     } catch (error) {
       console.error("Error fetching foods:", error);
@@ -128,7 +128,7 @@ function Menu() {
                   <div
                     className="thumb"
                     style={{
-                      backgroundImage: `url('http://localhost:5000/uploads/foods/${food.image}')`,
+                      backgroundImage: `url('${API_BASE_URL}/uploads/foods/${food.image}')`,
                     }}
                     aria-label={food.name}
                   >

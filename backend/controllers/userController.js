@@ -40,6 +40,11 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Password must contain at least one number" });
     }
 
+    // Require at least one special character
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return res.status(400).json({ message: "Password must contain at least one special character" });
+    }
+
     // Check if user already exists (case-insensitive email)
     const userExists = await User.findOne({ email: email.toLowerCase() });
     if (userExists) {

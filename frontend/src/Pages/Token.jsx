@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import axios from "axios";
+import io from "socket.io-client";
+import api, { API_BASE_URL } from "../utils/api";
 import Navbar from "../components/Navbar";
 import "../style/Token.css";
 
@@ -19,7 +20,7 @@ function Token() {
 
     const fetchOrder = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/orders/token/${tokenNumber}`);
+        const response = await api.get(`/orders/token/${tokenNumber}`);
         setOrder(response.data);
         setError("");
       } catch (err) {
@@ -32,12 +33,34 @@ function Token() {
 
     fetchOrder();
 
-    // Set up status updates polling fallback (every 2.5 seconds)
-    const pollInterval = setInterval(() => {
-      fetchOrder();
-    }, 2500);
+    // Establish WebSocket connection
+    const socket = io(API_BASE_URL);
 
-    return () => clearInterval(pollInterval);
+    // Join room when connected
+    socket.on("connect", () => {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (parsed && parsed.email) {
+            socket.emit("join", parsed.email);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    });
+
+    // Listen for order status updates
+    socket.on("order_updated", (updatedOrder) => {
+      if (updatedOrder && updatedOrder.tokenNumber === tokenNumber) {
+        setOrder(updatedOrder);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [tokenNumber]);
 
   if (loading) {
@@ -113,6 +136,12 @@ function Token() {
             <div className="summary-item" style={{ borderBottom: "none" }}>
               <span>Payment</span>
               <span>{order.paymentMethod ? order.paymentMethod.toUpperCase() : ""}</span>
+            </div>
+            <div className="summary-item" style={{ borderBottom: "none" }}>
+              <span>Payment Status</span>
+              <span style={{ color: order.isPaid ? "var(--success)" : "var(--danger)", fontWeight: "bold" }}>
+                {order.isPaid ? "PAID ✓" : "UNPAID ✗"}
+              </span>
             </div>
           </div>
           

@@ -7,7 +7,7 @@ import "../style/Register.css";
 
 function Register() {
   const navigate = useNavigate();
-  const { register, login } = useContext(AuthContext);
+  const { register } = useContext(AuthContext);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -32,22 +32,6 @@ function Register() {
     setError("");
     setSuccess("");
   };
-
-  const getStrength = (pw) => {
-    let score = 0;
-    if (!pw) return 0;
-    if (pw.length >= 8) score++;
-    if (pw.length >= 12) score++;
-    if (/[0-9]/.test(pw)) score++;
-    if (/[a-zA-Z]/.test(pw)) score++;
-    if (/[^a-zA-Z0-9]/.test(pw)) score++;
-    return score; // 0-5
-  };
-
-  const strength = getStrength(formData.password);
-  const strengthColors = ["#e74c3c", "#e74c3c", "#f39c12", "#27ae60", "#1a8a4a", "#0d6e3b"];
-  const strengthLabels = ["", "Weak", "Weak", "Medium", "Strong", "Very Strong"];
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -74,13 +58,18 @@ function Register() {
       return;
     }
 
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+      setError("Password must contain at least one special character.");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
     try {
-      // 1. Register User
+      // 1. Register User (which automatically logs the user in)
       await register(
         formData.name,
         formData.roll,
@@ -88,9 +77,6 @@ function Register() {
         formData.email,
         formData.password
       );
-
-      // 2. Auto Login User
-      await login(formData.email, formData.password);
 
       setSuccess("Account created! Redirecting to menu…");
       
@@ -181,7 +167,7 @@ function Register() {
                 id="r-password"
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="Min 6 chars + 1 number"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
                 autoComplete="new-password"
@@ -198,27 +184,7 @@ function Register() {
               </button>
             </div>
 
-            <div className="pw-strength-bar" id="pw-strength-bar">
-              <div
-                id="pw-strength-fill"
-                style={{
-                  width: `${(strength / 5) * 100}%`,
-                  background: strengthColors[strength],
-                }}
-              ></div>
-            </div>
-            {formData.password && (
-              <div
-                id="pw-strength-label"
-                style={{
-                  fontSize: "11px",
-                  marginTop: "2px",
-                  color: strengthColors[strength],
-                }}
-              >
-                {strengthLabels[strength]}
-              </div>
-            )}
+
           </div>
 
           <div className="field" style={{ marginBottom: "14px" }}>

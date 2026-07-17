@@ -2,6 +2,7 @@ import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import Navbar from "../components/Navbar";
+import { API_BASE_URL } from "../utils/api";
 import "../style/Cart.css";
 
 const TIME_SLOTS = [
@@ -91,7 +92,7 @@ function Cart() {
                 {cart.map((item) => (
                   <div className="cart-item" key={item._id} data-testid={`cart-row-${item._id}`}>
                     <img
-                      src={`http://localhost:5000/uploads/foods/${item.image}`}
+                      src={`${API_BASE_URL}/uploads/foods/${item.image}`}
                       alt={item.name}
                       className="cart-img"
                     />

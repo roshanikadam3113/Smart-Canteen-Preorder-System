@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import io from "socket.io-client";
+import api, { API_BASE_URL } from "../utils/api";
 import { AuthContext } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 
@@ -14,7 +15,7 @@ function MyOrders() {
 
     const getOrders = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/orders?email=${user.email}`);
+        const response = await api.get(`/orders?email=${user.email}`);
         setOrders(response.data);
       } catch (error) {
         console.error("Error fetching orders:", error);
@@ -25,12 +26,28 @@ function MyOrders() {
 
     getOrders();
 
-    // Poll for status updates every 3 seconds
-    const pollInterval = setInterval(() => {
-      getOrders();
-    }, 3000);
+    // Establish WebSocket connection
+    const socket = io(API_BASE_URL);
 
-    return () => clearInterval(pollInterval);
+    // Join room when connected
+    socket.on("connect", () => {
+      if (user.email) {
+        socket.emit("join", user.email);
+      }
+    });
+
+    // Listen for order status updates
+    socket.on("order_updated", (updatedOrder) => {
+      if (updatedOrder) {
+        setOrders((prevOrders) =>
+          prevOrders.map((o) => (o._id === updatedOrder._id ? updatedOrder : o))
+        );
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [user]);
 
   const formatTime = (iso) => {
@@ -109,13 +126,13 @@ function MyOrders() {
                       {itemsText}
                     </h3>
                     <div style={{ fontSize: "13px", color: "var(--brown-soft)", marginBottom: "4px" }}>
-                      {o.slot ? o.slot.split("—")[0].trim() : ""} • Paid via {o.paymentMethod.toUpperCase()}
+                      {o.slot ? o.slot.split("—")[0].trim() : ""} • {o.isPaid ? `Paid via ${o.paymentMethod.toUpperCase()}` : `Unpaid (${o.paymentMethod.toUpperCase()})`}
                     </div>
                     <div style={{ fontSize: "12px", color: "var(--muted)" }}>
                       {formatTime(o.createdAt)}
                     </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignMRign: "flex-end", alignItems: "flex-end", gap: "10px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}>
                     <div style={{ fontSize: "20px", fontWeight: "800", color: "var(--brown)" }}>
                       ₹{o.totalAmount}
                     </div>
