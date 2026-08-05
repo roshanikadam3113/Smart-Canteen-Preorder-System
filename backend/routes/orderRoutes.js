@@ -7,9 +7,13 @@ const {
   getOrderByToken,
   updateOrderStatus,
   archiveReadyOrders,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
 } = require("../controllers/orderController");
 
 router.post("/", protect, placeOrder);
+router.post("/create-razorpay-order", protect, createRazorpayOrder);
+router.post("/verify-payment", protect, verifyRazorpayPayment);
 router.get("/", protect, getOrders);
 router.get("/token/:tokenNumber", protect, getOrderByToken);
 router.put("/:id", protect, adminOnly, updateOrderStatus);

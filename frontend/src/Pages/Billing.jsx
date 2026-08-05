@@ -22,9 +22,25 @@ function Billing() {
     department: user?.department || "",
   });
 
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
   const [error, setError] = useState("");
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Load Razorpay checkout script dynamically
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   // Redirect if cart or slot is missing
   useEffect(() => {
@@ -53,7 +69,7 @@ function Billing() {
       return;
     }
     if (!paymentMethod) {
-      setError("Please select a payment method to continue.");
+      setError("Please select a payment method.");
       return;
     }
     setError("");
@@ -62,6 +78,82 @@ function Billing() {
     const itemsSummary = cart.map((i) => `${i.name} ×${i.qty}`).join(", ");
     const slotLabel = getSlotLabel();
 
+    // Online Razorpay Payment Checkout
+    if (paymentMethod === "razorpay") {
+      try {
+        setIsProcessing(true);
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          setError("Failed to load Razorpay SDK. Please check your internet connection.");
+          setIsProcessing(false);
+          return;
+        }
+
+        // 1. Create Razorpay order on backend
+        const res = await api.post("/orders/create-razorpay-order", { amount: total });
+
+        // 2. Open Razorpay Modal
+        const options = {
+          key: res.data.keyId,
+          amount: res.data.amount,
+          currency: res.data.currency,
+          name: "Canteen Preorder System",
+          description: `Online Food Preorder (${cart.length} item(s))`,
+          order_id: res.data.id,
+          prefill: {
+            name,
+            email: user?.email,
+          },
+          theme: {
+            color: "#e65100",
+          },
+          handler: async function (response) {
+            try {
+              // 3. Verify payment signature on backend
+              const verifyRes = await api.post("/orders/verify-payment", {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                userName: name,
+                userEmail: user.email,
+                rollNumber: roll,
+                department,
+                items: cart,
+                totalAmount: total,
+                slot: slotLabel,
+                paymentMethod: "Razorpay (Online)",
+              });
+
+              setIsOrderPlaced(true);
+              localStorage.setItem("canteen.lastOrder", verifyRes.data.tokenNumber);
+              clearCart();
+              alert("Payment Verified! Order Placed Successfully.");
+              navigate(`/token?t=${verifyRes.data.tokenNumber}`);
+            } catch (err) {
+              console.error("Payment verification failed:", err);
+              setError(err.response?.data?.message || "Payment verification failed. Please contact support.");
+            } finally {
+              setIsProcessing(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setIsProcessing(false);
+            },
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        console.error("Razorpay order creation failed:", err);
+        setError(err.response?.data?.message || "Failed to initialize online payment. Please try again.");
+        setIsProcessing(false);
+      }
+      return;
+    }
+
+    // Direct / Offline UPI order option fallback
     const confirmed = window.confirm(
       `Confirm your order?\n\nItems: ${itemsSummary}\nTotal: ₹${total}\nSlot: ${slotLabel}\nPayment: ${paymentMethod.toUpperCase()}\n\n⚠️ No cancellation after this step.`
     );
@@ -69,6 +161,7 @@ function Billing() {
     if (!confirmed) return;
 
     try {
+      setIsProcessing(true);
       const orderData = {
         userName: name,
         userEmail: user.email,
@@ -82,21 +175,16 @@ function Billing() {
 
       const response = await api.post("/orders", orderData);
       
-      // Set order placed state to true to prevent redirecting to /menu
       setIsOrderPlaced(true);
-      
-      // Save last placed order token to localStorage
       localStorage.setItem("canteen.lastOrder", response.data.tokenNumber);
-      
-      // Reset cart state
       clearCart();
-      
-      // Show success alert and redirect to token page so they can see their token
       alert("Order Placed Successfully!");
       navigate(`/token?t=${response.data.tokenNumber}`);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to place order. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -110,7 +198,7 @@ function Billing() {
         <div className="billing-page">
           <div className="billing-header">
             <h1>Checkout & Billing</h1>
-            <p>Verify your information and pay securely to get your digital token.</p>
+            <p>Verify your details and choose your preferred payment option to get your food token.</p>
           </div>
 
           {error && (
@@ -166,34 +254,85 @@ function Billing() {
               {/* Payment selector */}
               <div className="payment-card">
                 <h3>Select Payment Method</h3>
-                
-                <div className="upi-apps">
-                  {["gpay", "phonepe", "paytm", "bhim"].map((app) => (
-                    <button
-                      key={app}
-                      className={`upi-app pay-opt ${paymentMethod === app ? "selected" : ""}`}
-                      onClick={() => setPaymentMethod(app)}
-                      style={{
-                        border: paymentMethod === app ? "2px solid var(--orange)" : "1px solid var(--border)",
-                        background: paymentMethod === app ? "var(--cream)" : "#fff",
-                      }}
-                    >
-                      {app === "gpay" && "Google Pay"}
-                      {app === "phonepe" && "PhonePe"}
-                      {app === "paytm" && "Paytm"}
-                      {app === "bhim" && "BHIM UPI"}
-                    </button>
-                  ))}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+                  {/* Razorpay Online Gateway Option */}
+                  <button
+                    type="button"
+                    className={`pay-opt ${paymentMethod === "razorpay" ? "selected" : ""}`}
+                    onClick={() => setPaymentMethod("razorpay")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "14px 18px",
+                      borderRadius: "10px",
+                      border: paymentMethod === "razorpay" ? "2px solid var(--orange, #e65100)" : "1px solid var(--border, #e0e0e0)",
+                      background: paymentMethod === "razorpay" ? "var(--cream, #fff8f0)" : "#fff",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      fontSize: "15px",
+                    }}
+                  >
+                    <span style={{ fontSize: "22px" }}>💳</span>
+                    <div style={{ textAlign: "left", flex: 1 }}>
+                      <div>Razorpay Online Gateway (Instant Verification)</div>
+                      <div style={{ fontSize: "12px", fontWeight: "normal", color: "#666" }}>
+                        Pay via UPI, Credit/Debit Cards, NetBanking, & Wallets
+                      </div>
+                    </div>
+                    <span style={{ fontSize: "12px", background: "#e65100", color: "#fff", padding: "3px 8px", borderRadius: "12px" }}>
+                      Recommended
+                    </span>
+                  </button>
+
+                  {/* Direct UPI options */}
+                  <div className="upi-apps">
+                    {["gpay", "phonepe", "paytm", "bhim"].map((app) => (
+                      <button
+                        key={app}
+                        type="button"
+                        className={`upi-app pay-opt ${paymentMethod === app ? "selected" : ""}`}
+                        onClick={() => setPaymentMethod(app)}
+                        style={{
+                          border: paymentMethod === app ? "2px solid var(--orange, #e65100)" : "1px solid var(--border, #e0e0e0)",
+                          background: paymentMethod === app ? "var(--cream, #fff8f0)" : "#fff",
+                        }}
+                      >
+                        {app === "gpay" && "Google Pay"}
+                        {app === "phonepe" && "PhonePe"}
+                        {app === "paytm" && "Paytm"}
+                        {app === "bhim" && "BHIM UPI"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {paymentMethod && (
+                {paymentMethod === "razorpay" && (
+                  <div style={{ animation: "fadeUp 0.3s ease", padding: "12px", background: "#f9f9f9", borderRadius: "8px", border: "1px solid #eee" }}>
+                    <div className="payment-method">
+                      <span className="payment-icon">⚡</span>
+                      <div>
+                        <div className="payment-title">Automated Razorpay Checkout</div>
+                        <div className="payment-subtitle">
+                          You will be prompted with Razorpay's modal to pay <b>₹{total}</b> securely.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="secure-payment" style={{ marginTop: "8px" }}>
+                      <span>🔒</span> 256-bit Encrypted Razorpay SSL
+                    </div>
+                  </div>
+                )}
+
+                {paymentMethod && paymentMethod !== "razorpay" && (
                   <div style={{ animation: "fadeUp 0.3s ease" }}>
                     <div className="payment-method">
                       <span className="payment-icon">📱</span>
                       <div>
-                        <div className="payment-title">Scan QR & Pay</div>
+                        <div className="payment-title">Direct UPI / QR Transfer</div>
                         <div className="payment-subtitle">
-                          Open your UPI app, scan the QR code below, and complete the transfer of <b>₹{total}</b>.
+                          Open {paymentMethod.toUpperCase()}, scan the QR code below, and transfer <b>₹{total}</b> to the canteen.
                         </div>
                       </div>
                     </div>
@@ -215,13 +354,13 @@ function Billing() {
                     </div>
 
                     <div className="secure-payment">
-                      <span>🔒</span> UPI Safe & Secure Checkout
+                      <span>🔒</span> Safe & Secure Checkout
                     </div>
                   </div>
                 )}
 
-                <div className="payment-note">
-                  <strong>Notice:</strong> Your order token is generated immediately. Show the digital token screen at the counter to claim your food.
+                <div className="payment-note" style={{ marginTop: "16px" }}>
+                  <strong>Notice:</strong> Your order token is generated immediately upon placing the order. Show the digital token screen at the counter to claim your food.
                 </div>
               </div>
             </div>
@@ -251,8 +390,17 @@ function Billing() {
                 <span data-testid="sum-total">₹{total}</span>
               </div>
 
-              <button className="pay-btn" onClick={handlePlaceOrder} data-testid="place-order-btn">
-                Place Order (Pay ₹{total})
+              <button
+                className="pay-btn"
+                onClick={handlePlaceOrder}
+                disabled={isProcessing}
+                data-testid="place-order-btn"
+              >
+                {isProcessing
+                  ? "Processing..."
+                  : paymentMethod === "razorpay"
+                  ? `Pay ₹${total} via Razorpay`
+                  : `Place Order (Pay ₹${total})`}
               </button>
             </div>
           </div>
