@@ -144,10 +144,15 @@ function Billing() {
         };
 
         const rzp = new window.Razorpay(options);
+        rzp.on("payment.failed", function (response) {
+          console.error("Razorpay Payment Failed:", response.error);
+          setError(`Payment Failed: ${response.error.description || response.error.reason || "Payment was not completed"}`);
+          setIsProcessing(false);
+        });
         rzp.open();
       } catch (err) {
         console.error("Razorpay order creation failed:", err);
-        setError(err.response?.data?.message || "Failed to initialize online payment. Please try again.");
+        setError(err.response?.data?.message || "Failed to initialize online payment. Please check your network or browser settings.");
         setIsProcessing(false);
       }
       return;
