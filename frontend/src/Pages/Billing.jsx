@@ -675,6 +675,22 @@ function Billing() {
 
               </div>
 
+              {/* PAYMENT METHOD */}
+
+              <div className="summary-item pickup-row">
+
+                <span>
+                  Payment Method
+                </span>
+
+                <span
+                  data-testid="sum-payment-method"
+                >
+                  {getPaymentMethodName()}
+                </span>
+
+              </div>
+
               {/* TOTAL */}
 
               <div className="summary-total">
