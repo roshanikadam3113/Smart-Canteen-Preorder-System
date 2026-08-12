@@ -54,6 +54,7 @@ app.use("/foods", foodRoutes);
 app.use("/auth", authRoutes);
 app.use("/orders", orderRoutes);
 
-server.listen(5000, () => {
-  console.log("Server Started");
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`Server Started on port ${PORT}`);
 });

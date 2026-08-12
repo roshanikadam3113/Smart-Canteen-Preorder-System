@@ -40,7 +40,7 @@ const PAYMENT_METHODS = [
     id: "bhim",
     name: "BHIM UPI",
     shortName: "BHIM",
-    icon: "https://cdn.simpleicons.org/bhim",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg",
   },
 ];
 
